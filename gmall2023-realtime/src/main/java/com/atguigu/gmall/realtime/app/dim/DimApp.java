@@ -8,7 +8,7 @@ import com.atguigu.gmall.realtime.bean.TableProcess;
 import com.atguigu.gmall.realtime.common.Constant;
 import com.atguigu.gmall.realtime.util.FlinkSinkUtil;
 import com.atguigu.gmall.realtime.util.HBaseUtil;
-import com.atguigu.gmall.realtime.util.JdbcUtils;
+import com.atguigu.gmall.realtime.util.JdbcUtil;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import com.ververica.cdc.connectors.mysql.table.StartupOptions;
 import com.ververica.cdc.debezium.JsonDebeziumDeserializationSchema;
@@ -105,13 +105,13 @@ public class DimApp extends BaseApp {
                         map = new HashMap<>();
 
                         // 1 去 mysql 中查询 table_process 表所有数据
-                        java.sql.Connection mysqlConn = JdbcUtils.getMysqlConnection();
-                        List<TableProcess> tps = JdbcUtils.queryList(mysqlConn, "select * from gmall2023_config.table_process", null, TableProcess.class, true);
+                        java.sql.Connection mysqlConn = JdbcUtil.getMysqlConnection();
+                        List<TableProcess> tps = JdbcUtil.queryList(mysqlConn, "select * from gmall2023_config.table_process", null, TableProcess.class, true);
                         for (TableProcess tp : tps) {
                             String key = getKey(tp.getSourceTable(), tp.getSourceType());
                             map.put(key, tp);
                         }
-                        JdbcUtils.closeConnection(mysqlConn);
+                        JdbcUtil.closeConnection(mysqlConn);
                     }
 
                     // 4 处理数据流中的数据：从广播状态中读取配置信息
@@ -122,11 +122,9 @@ public class DimApp extends BaseApp {
                         ReadOnlyBroadcastState<String, TableProcess> state = readOnlyContext.getBroadcastState(desc);
                         String key = getKey(obj.getString("table"), "ALL");
                         TableProcess tp = state.get(key);
+
                         if (tp == null) {
                             tp = map.get(key);
-                            System.out.println("在map中查找到" + key);
-                        } else {
-                            System.out.println("在状态中查找到 " + key);
                         }
 
                         if(tp != null){

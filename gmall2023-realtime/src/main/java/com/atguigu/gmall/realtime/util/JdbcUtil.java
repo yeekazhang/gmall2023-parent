@@ -1,6 +1,5 @@
 package com.atguigu.gmall.realtime.util;
 
-import com.alibaba.fastjson.JSONObject;
 import com.atguigu.gmall.realtime.bean.TableProcess;
 import com.atguigu.gmall.realtime.common.Constant;
 import org.apache.commons.beanutils.BeanUtils;
@@ -8,10 +7,9 @@ import org.apache.flink.shaded.guava30.com.google.common.base.CaseFormat;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
-public class JdbcUtils {
+public class JdbcUtil {
     public static Connection getMysqlConnection() throws Exception {
 
         // 获取 jdbc连接

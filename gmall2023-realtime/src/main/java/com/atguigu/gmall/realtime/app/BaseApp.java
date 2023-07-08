@@ -24,7 +24,7 @@ public abstract class BaseApp {
 
         // 设置状态后端
         env.setStateBackend(new HashMapStateBackend());
-        env.enableCheckpointing(30000);
+        env.enableCheckpointing(3000);
         env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
         env.getCheckpointConfig().setCheckpointStorage("hdfs://hadoop162:8020/gmall2023/" + ckAndGroupId);
         env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);

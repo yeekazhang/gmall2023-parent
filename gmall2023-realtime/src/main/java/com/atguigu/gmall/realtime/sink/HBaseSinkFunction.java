@@ -17,13 +17,13 @@ public class HBaseSinkFunction extends RichSinkFunction<Tuple2<JSONObject, Table
     private Connection conn;
 
     @Override
-    public void close() throws Exception {
-        HBaseUtil.closeHBaseConn(conn);
+    public void open(Configuration parameters) throws Exception {
+        conn = HBaseUtil.getHBaseConnection();
     }
 
     @Override
-    public void open(Configuration parameters) throws Exception {
-        conn = HBaseUtil.getHBaseConnection();
+    public void close() throws Exception {
+        HBaseUtil.closeHBaseConn(conn);
     }
 
     @Override

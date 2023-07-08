@@ -21,4 +21,5 @@ public class Constant {
     public static final String TOPIC_DWD_TRAFFIC_ACTION = "dwd_traffic_action";
     public static final String TOPIC_DWD_TRAFFIC_DISPLAY = "dwd_traffic_display";
 
+    public static final String TOPIC_DWD_INTERACTION_COMMENT_INFO = "dwd_interaction_comment_info";
 }
