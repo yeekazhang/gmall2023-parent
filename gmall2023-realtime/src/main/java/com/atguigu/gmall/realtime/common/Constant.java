@@ -22,4 +22,6 @@ public class Constant {
     public static final String TOPIC_DWD_TRAFFIC_DISPLAY = "dwd_traffic_display";
 
     public static final String TOPIC_DWD_INTERACTION_COMMENT_INFO = "dwd_interaction_comment_info";
+    public static final String TOPIC_DWD_TRADE_CART_ADD = "dwd_trade_cart_add";
+    public static final String TOPIC_DWD_TRADE_ORDER_DETAIL = "dwd_trade_order_detail";
 }
