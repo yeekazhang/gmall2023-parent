@@ -24,7 +24,7 @@ import org.apache.flink.util.OutputTag;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DwdBaseLog extends BaseApp {
+public class Dwd_01_DwdBaseLog extends BaseApp {
 
     private final String START = "start";
     private final String ERR = "err";
@@ -33,7 +33,7 @@ public class DwdBaseLog extends BaseApp {
     private final String PAGE = "page";
 
     public static void main(String[] args) {
-        new DwdBaseLog().start(
+        new Dwd_01_DwdBaseLog().start(
                 30001,
                 2,
                 "Dwd_01_DwdBaseLog",

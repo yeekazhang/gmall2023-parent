@@ -1,4 +1,4 @@
-package com.atguigu.gmall.realtime.app.dim;
+package com.atguigu.gmall.realtime.app.dwd.db;
 
 
 import com.alibaba.fastjson.JSON;
@@ -31,12 +31,15 @@ import org.apache.flink.util.Collector;
 import org.apache.hadoop.hbase.client.Connection;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 @Slf4j
-public class DimApp extends BaseApp {
+public class Dwd_09_BaseDb extends BaseApp {
     public static void main(String[] args) {
-        new DimApp().start(20001, 2, "DimApp", Constant.TOPIC_ODS_DB);
+        new Dwd_09_BaseDb().start(20001, 2, "DimApp", Constant.TOPIC_ODS_DB);
     }
 
     @Override
@@ -48,25 +51,22 @@ public class DimApp extends BaseApp {
         // 2 通过 flink cdc 读取配置表的数据
         SingleOutputStreamOperator<TableProcess> tpStream = readTableProcess(env);
 
-        // 3 根据配置表的数据，在 HBase中建表
-        tpStream = createHBaseTable(tpStream);
-
         // 4 数据流去 connect 配置流
         SingleOutputStreamOperator<Tuple2<JSONObject, TableProcess>> dimDataWithTpStream = connect(etledStream, tpStream);
 
         // 5 删除不需要的列
         SingleOutputStreamOperator<Tuple2<JSONObject, TableProcess>> resultStream = deleteNotNeedColumns(dimDataWithTpStream);
 
-        // 6 写到 HBase 中
-        writeToHBase(resultStream);
+        // 6 写出到 Kafka 中
+        writeToKafka(resultStream);
 
 
     }
 
-    private void writeToHBase(SingleOutputStreamOperator<Tuple2<JSONObject, TableProcess>> resultStream) {
-        // 没有专门的HBase连接器，自定义sink
-        resultStream.addSink(FlinkSinkUtil.getHBaseSink());
+    private void writeToKafka(SingleOutputStreamOperator<Tuple2<JSONObject, TableProcess>> resultStream) {
+        resultStream.sinkTo(FlinkSinkUtil.getKafkaSink());
     }
+
 
     private SingleOutputStreamOperator<Tuple2<JSONObject, TableProcess>> deleteNotNeedColumns(SingleOutputStreamOperator<Tuple2<JSONObject, TableProcess>> dimDataWithTpStream) {
         return dimDataWithTpStream
@@ -106,7 +106,7 @@ public class DimApp extends BaseApp {
 
                         // 1 去 mysql 中查询 table_process 表所有数据
                         java.sql.Connection mysqlConn = JdbcUtil.getMysqlConnection();
-                        List<TableProcess> tps = JdbcUtil.queryList(mysqlConn, "select * from gmall2023_config.table_process where sink_type='dim' ", null, TableProcess.class, true);
+                        List<TableProcess> tps = JdbcUtil.queryList(mysqlConn, "select * from gmall2023_config.table_process where sink_type=?", new Object[]{"dwd"}, TableProcess.class, true);
                         for (TableProcess tp : tps) {
                             String key = getKey(tp.getSourceTable(), tp.getSourceType());
                             map.put(key, tp);
@@ -120,7 +120,7 @@ public class DimApp extends BaseApp {
                                                ReadOnlyContext readOnlyContext,
                                                Collector<Tuple2<JSONObject, TableProcess>> collector) throws Exception {
                         ReadOnlyBroadcastState<String, TableProcess> state = readOnlyContext.getBroadcastState(desc);
-                        String key = getKey(obj.getString("table"), "ALL");
+                        String key = getKey(obj.getString("table"), obj.getString("type"));
                         TableProcess tp = state.get(key);
 
                         if (tp == null) {
@@ -162,53 +162,6 @@ public class DimApp extends BaseApp {
 
     }
 
-    private SingleOutputStreamOperator<TableProcess> createHBaseTable(SingleOutputStreamOperator<TableProcess> tpStream) {
-        return tpStream.map(new RichMapFunction<TableProcess, TableProcess>() {
-
-            private Connection hbaseConn;
-
-            @Override
-            public void open(Configuration parameters) throws Exception {
-                // 1 获取到 Hbase的连接
-                hbaseConn = HBaseUtil.getHBaseConnection();
-
-            }
-
-            @Override
-            public void close() throws Exception {
-                // 5 关闭连接
-                HBaseUtil.closeHBaseConn(hbaseConn);
-
-            }
-
-            @Override
-            public TableProcess map(TableProcess tp) throws Exception {
-                String op = tp.getOp();
-                if("d".equals(op)){
-                    dropTable(tp);
-                } else if("r".equals(op) || "c".equals(op)){
-                    createTable(tp);
-                } else {
-                    dropTable(tp);
-                    createTable(tp);
-                }
-                return tp;
-            }
-
-            private void createTable(TableProcess tp) throws IOException {
-                // namespace
-                HBaseUtil.createHBaseTable(hbaseConn, Constant.HBASE_NAMESPACE, tp.getSinkTable(), tp.getSinkFamily());
-
-            }
-
-            private void dropTable(TableProcess tp) throws IOException {
-                HBaseUtil.dropTable(hbaseConn, Constant.HBASE_NAMESPACE, tp.getSourceTable());
-
-            }
-        });
-
-    }
-
     private SingleOutputStreamOperator<TableProcess> readTableProcess(StreamExecutionEnvironment env) {
         MySqlSource<String> mySqlSource = MySqlSource.<String>builder()
                 .hostname(Constant.MYSQL_HOST)
@@ -242,7 +195,7 @@ public class DimApp extends BaseApp {
                         return tp;
                     }
                 })
-                .filter(op -> "dim".equals(op.getSinkType())); // 过滤出维度表的配置信息
+                .filter(op -> "dwd".equals(op.getSinkType())); // 过滤出事实表的配置信息
 
 
     }
@@ -259,9 +212,7 @@ public class DimApp extends BaseApp {
 
                     return "gmall2023".equals(db)
                             && ("insert".equals(type)
-                            || "update".equals(type)
-                            || "delete".equals(type)
-                            || "bootstrap-insert".equals(type))
+                            || "update".equals(type))
                             && data != null
                             && data.length() > 2;
 
@@ -271,9 +222,7 @@ public class DimApp extends BaseApp {
                 }
             }
         })
-        .map((MapFunction<String, JSONObject>) value -> {
-            return JSON.parseObject(value.replaceAll("bootstrap-insert", "insert"));
-        });
+        .map((MapFunction<String, JSONObject>) JSON::parseObject);
     }
 }
 

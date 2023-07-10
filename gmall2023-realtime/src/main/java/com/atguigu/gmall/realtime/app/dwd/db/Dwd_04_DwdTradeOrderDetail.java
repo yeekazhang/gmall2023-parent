@@ -9,12 +9,12 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import java.time.Duration;
 
-public class DwdTradeOrderDetail extends BaseSQLApp {
+public class Dwd_04_DwdTradeOrderDetail extends BaseSQLApp {
     public static void main(String[] args) {
-        new DwdTradeOrderDetail().start(
+        new Dwd_04_DwdTradeOrderDetail().start(
                 30004,
                 2,
-                "DwdTradeOrderDetail"
+                "Dwd_04_DwdTradeOrderDetail"
         );
 
     }

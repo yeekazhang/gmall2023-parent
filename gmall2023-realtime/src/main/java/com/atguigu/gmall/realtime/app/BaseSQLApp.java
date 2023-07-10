@@ -39,13 +39,15 @@ public abstract class BaseSQLApp {
     // 读取 ods_db
     public void readOdsDb(StreamTableEnvironment tEnv) {
         tEnv.executeSql("create table ods_db(" +
-                "  `database` string, " +
-                "  `table` string, " +
-                "  `type` string, " +
-                "  `data` map<string, string>, " +
-                "  `old` map<string, string>, " +
-                "  `ts` bigint, " +
-                "  `pt` as proctime() " +
+                        "  `database` string, " +
+                        "  `table` string, " +
+                        "  `type` string, " +
+                        "  `data` map<string, string>, " +
+                        "  `old` map<string, string>, " +
+                        "  `ts` bigint, " +
+                        "  `pt` as proctime(), " +
+                        "   et as to_timestamp_ltz(ts, 0), " +
+                        "   watermark for et as et - interval '3' second " +
                 ")" + SQLUtil.getKafkaDDLSource("DwdInteractionCommentInfo", Constant.TOPIC_ODS_DB));
     }
 

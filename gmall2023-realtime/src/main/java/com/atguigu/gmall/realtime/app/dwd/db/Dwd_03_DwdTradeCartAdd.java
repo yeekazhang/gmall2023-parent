@@ -7,12 +7,12 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
-public class DwdTradeCartAdd extends BaseSQLApp {
+public class Dwd_03_DwdTradeCartAdd extends BaseSQLApp {
     public static void main(String[] args) {
-        new DwdTradeCartAdd().start(
+        new Dwd_03_DwdTradeCartAdd().start(
                 30003,
                 2,
-                "DwdTradeCartAdd"
+                "Dwd_03_DwdTradeCartAdd"
         );
 
     }
